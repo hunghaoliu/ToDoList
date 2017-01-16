@@ -3,6 +3,7 @@
     package="com.henry.todolist">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:allowBackup="true"
@@ -13,7 +14,8 @@
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
-            android:theme="@style/AppTheme.NoActionBar">
+            android:theme="@style/AppTheme.NoActionBar"
+            android:screenOrientation="portrait">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -28,6 +30,12 @@
             android:authorities="com.henry.todolist.provider"
             android:name="com.henry.todolist.database.TaskDbContentProvider"
             android:exported="false"></provider>
+        <receiver android:name=".network.NetworkReceiver">
+            <intent-filter>
+                <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
+            </intent-filter>
+        </receiver>
+
     </application>
 
 </manifest>

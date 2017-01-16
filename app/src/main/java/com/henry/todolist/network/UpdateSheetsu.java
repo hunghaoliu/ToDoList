@@ -4,6 +4,7 @@ import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
+import android.database.ContentObserver;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.util.JsonWriter;
@@ -34,8 +35,11 @@ public class UpdateSheetsu {
     private static Context mContext;
     private static final String LOG_TAG = "[ToDo] UpdateSheetsu";
 
-    public static void checkUpdate(Context context) {
+    public static void setContext(Context context) {
         mContext = context;
+    }
+
+    public static void checkUpdate() {
         new BackgroundUpdateTask().execute("");
     }
 
@@ -47,10 +51,11 @@ public class UpdateSheetsu {
         @Override
         protected void onPreExecute() {
 
-            waitingDialog = new ProgressDialog(mContext);
-            waitingDialog.setMessage(mContext.getResources().getString(R.string.please_wait));
-            waitingDialog.show();
-
+            if (waitingDialog == null) {
+                waitingDialog = new ProgressDialog(mContext);
+                waitingDialog.setMessage(mContext.getResources().getString(R.string.please_wait));
+                waitingDialog.show();
+            }
         }
 
         @Override
@@ -81,7 +86,7 @@ public class UpdateSheetsu {
                         if (value.getIsLocal() == Constants.SHEETSU_SYNC_NEED_UPDATE) {
                             url = Constants.SHEETSURL + "/uuid/" + value.getUuid();
                             method = "PUT";
-                        } else if (value.getIsLocal() == Constants.SHEETSU_SYNC_NEED_INHSERT) {
+                        } else if (value.getIsLocal() == Constants.SHEETSU_SYNC_NEED_INSERT) {
                             url = Constants.SHEETSURL;
                             method = "POST";
                         } else if (value.getIsLocal() == Constants.SHEETSU_SYNC_NEED_DELETE) {
@@ -91,6 +96,7 @@ public class UpdateSheetsu {
                             // do nothing
                         }
 
+                        Log.d(LOG_TAG, "url = " + url + " , payload = " + sw.toString() + " , methoud = " + method);
                         makePostRequest(url, sw.toString(), method);
                     } catch (Exception e) {
                         Log.w(LOG_TAG, "json write failed e = " + e);
@@ -117,6 +123,8 @@ public class UpdateSheetsu {
 
                                     if (resolver.update(uri, updateValues, where, whereArgs) < 0) {
                                         Log.w(LOG_TAG, "update " + value.getUuid() + " failed");
+                                    } else {
+                                        Log.d(LOG_TAG, "Set " + value.getUuid() + " to sync already");
                                     }
                                 }
                             } catch (Exception e) {

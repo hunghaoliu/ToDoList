@@ -80,7 +80,7 @@ public class ModifyTaskActivity extends AppCompatActivity implements View.OnClic
                             cv.put(TaskContract.TaskEntry.COL_TASK_DATE, mEditDate.getText().toString());
                             cv.put(TaskContract.TaskEntry.COL_TASK_TITLE, mEditContent.getText().toString());
                             cv.put(TaskContract.TaskEntry.COL_TASK_FINISHED, mCheckIsFinish.isChecked());
-                            cv.put(TaskContract.TaskEntry.COL_TASK_LOCAL, mIsLocal == 2? 2 : 1); // The record is not insert to sheetsu yet
+                            cv.put(TaskContract.TaskEntry.COL_TASK_LOCAL, mIsLocal == Constants.SHEETSU_SYNC_NEED_INSERT? Constants.SHEETSU_SYNC_NEED_INSERT : Constants.SHEETSU_SYNC_NEED_UPDATE); // The record is not insert to sheetsu yet
                             cv.put(TaskContract.TaskEntry.COL_TASK_UUID, mUuid);
                             Log.d(LOG_TAG, "Edit a task with uuid " + mUuid);
 
@@ -111,7 +111,7 @@ public class ModifyTaskActivity extends AppCompatActivity implements View.OnClic
                             cv.put(TaskContract.TaskEntry.COL_TASK_DATE, mEditDate.getText().toString());
                             cv.put(TaskContract.TaskEntry.COL_TASK_TITLE, mEditContent.getText().toString());
                             cv.put(TaskContract.TaskEntry.COL_TASK_FINISHED, 0);
-                            cv.put(TaskContract.TaskEntry.COL_TASK_LOCAL, 2);
+                            cv.put(TaskContract.TaskEntry.COL_TASK_LOCAL, Constants.SHEETSU_SYNC_NEED_INSERT);
                             String uuid = UUID.randomUUID().toString();
                             cv.put(TaskContract.TaskEntry.COL_TASK_UUID, uuid);
                             Log.d(LOG_TAG, "Add a new task with uuid " + uuid);

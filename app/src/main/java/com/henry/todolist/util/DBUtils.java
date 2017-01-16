@@ -49,4 +49,27 @@ public class DBUtils {
 
         return taskMap;
     }
+
+    public static int loadTaskStatusFromDB(Context context, String uuid) {
+        int isLocal = 0;
+        ContentResolver resolver = context.getContentResolver();
+        if (resolver == null) {
+            Log.w(LOG_TAG, "Cannot get ContentResolver");
+            return isLocal;
+        }
+
+        Uri uri = Uri.parse("content://" + TaskDbContentProvider.AUTHORITY + "/" + TaskContract.TaskEntry.TABLE);
+        Cursor cursor = null;
+        String where = TaskContract.TaskEntry.COL_TASK_UUID + "=?";
+        String[] whereArgs = new String[] { uuid };
+        cursor = resolver.query(uri, null, where, whereArgs, null);
+
+        while (cursor.moveToNext()) {
+            int idx = cursor.getColumnIndex(TaskContract.TaskEntry.COL_TASK_LOCAL);
+            isLocal = cursor.getInt(idx);
+        }
+        cursor.close();
+
+        return isLocal;
+    }
 }

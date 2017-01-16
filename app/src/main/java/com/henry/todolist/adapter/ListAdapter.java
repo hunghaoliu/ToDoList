@@ -37,6 +37,10 @@ public class ListAdapter extends BaseAdapter {
 
         for (TaskModel task : mList) {
            if (task.getUuid().equals(item.getUuid())) {
+               if (task.getIsLocal() != item.getIsLocal()) {
+                   task.setIsLocal(item.getIsLocal());
+               }
+
                return;
            }
         }

@@ -29,7 +29,7 @@ import java.util.HashMap;
  * Created by henry on 17/1/15.
  */
 public class TaskDbContentObserver extends ContentObserver {
-    private static final String LOG_TAG = "[ToDo] TaskDbContentObserver";
+    private static final String LOG_TAG = "[ToDo] TaskDbObserver";
     private Context mContext;
 
     public TaskDbContentObserver(Handler handler, Context context) {
@@ -46,6 +46,6 @@ public class TaskDbContentObserver extends ContentObserver {
     public void onChange(boolean selfChange, Uri uri) {
         Log.d(LOG_TAG, "[onChange] uri = " + uri);
 
-        UpdateSheetsu.checkUpdate(mContext);
+        UpdateSheetsu.checkUpdate();
     }
 }

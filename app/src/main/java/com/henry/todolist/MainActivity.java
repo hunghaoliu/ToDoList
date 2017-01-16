@@ -5,7 +5,6 @@ import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
-import android.database.Cursor;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -44,6 +43,7 @@ public class MainActivity extends AppCompatActivity {
     private ListAdapter mListAdapter;
     private TaskDbContentObserver taskObserver;
     private static final int REQUEST_CODE = 0;
+    private ProgressDialog waitingDialog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -82,8 +82,14 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     if (updateValues != null) {
                         TaskModel updateTask = (TaskModel) mListAdapter.getItem(i);
+
+                        // To avoid listadapter is unsync with local DB
+                        int isLocal = DBUtils.loadTaskStatusFromDB(MainActivity.this, updateTask.getUuid());
+                        if (isLocal != updateTask.getIsLocal()) {
+                            updateTask.setIsLocal(isLocal);
+                        }
                         updateValues.put(TaskContract.TaskEntry.COL_TASK_FINISHED, updateTask.getIsFinish());
-                        updateValues.put(TaskContract.TaskEntry.COL_TASK_LOCAL, updateTask.getIsLocal() == Constants.SHEETSU_SYNC_NEED_INHSERT? Constants.SHEETSU_SYNC_NEED_INHSERT : Constants.SHEETSU_SYNC_NEED_UPDATE); // The record is not insert to sheetsu yet
+                        updateValues.put(TaskContract.TaskEntry.COL_TASK_LOCAL, updateTask.getIsLocal() == Constants.SHEETSU_SYNC_NEED_INSERT ? Constants.SHEETSU_SYNC_NEED_INSERT : Constants.SHEETSU_SYNC_NEED_UPDATE); // The record is not insert to sheetsu yet
 
                         String where = TaskContract.TaskEntry.COL_TASK_UUID + "=?";
                         String[] whereArgs = new String[] { updateTask.getUuid() };
@@ -104,6 +110,13 @@ public class MainActivity extends AppCompatActivity {
         taskObserver = new TaskDbContentObserver(new Handler(), this);
         Uri uri = Uri.parse("content://" + TaskDbContentProvider.AUTHORITY + "/" + TaskContract.TaskEntry.TABLE);
         getContentResolver().registerContentObserver(uri, true, taskObserver);
+
+        if (waitingDialog == null) {
+            waitingDialog = new ProgressDialog(this);
+            waitingDialog.setMessage(getResources().getString(R.string.please_wait));
+        }
+
+        UpdateSheetsu.setContext(this);
     }
 
     @Override
@@ -217,7 +230,6 @@ public class MainActivity extends AppCompatActivity {
     public class BackgroundDownloadTask extends AsyncTask<String, Void, ArrayList<SheetsuModel>> {
         ArrayList<SheetsuModel> todoItems = new ArrayList<>();
         protected Context mContext;
-        private ProgressDialog waitingDialog;
 
         public BackgroundDownloadTask(Context mContext) {
             this.mContext = mContext;
@@ -226,10 +238,9 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected void onPreExecute() {
 
-            waitingDialog = new ProgressDialog(mContext);
-            waitingDialog.setMessage(mContext.getResources().getString(R.string.please_wait));
-            waitingDialog.show();
-
+            if (!waitingDialog.isShowing()) {
+                waitingDialog.show();
+            }
         }
 
 
@@ -294,23 +305,19 @@ public class MainActivity extends AppCompatActivity {
                     taskMap.put(thisItem.getUuid(),
                             new TaskModel(thisItem.getDatetime(), thisItem.getTasks(),
                                           thisItem.getIsFinish().equals("TRUE"), 0, thisItem.getUuid()));
-                } else {
-                    // check local db is updated then sheetsu one
-                    TaskModel localTask = taskMap.get(thisItem.getUuid());
-                    if (localTask.getIsLocal() != Constants.SHEETSU_SYNC_ALREADY) {
-                        // local is updated, need to sync to sheetsu
-                        needSync = true;
-                    }
                 }
-            }
-
-            if (needSync) {
-                UpdateSheetsu.checkUpdate(mContext);
             }
 
             // Add to adapter
             for (TaskModel value : taskMap.values()) {
+                if (value.getIsLocal() != Constants.SHEETSU_SYNC_ALREADY) {
+                    needSync = true;
+                }
                 mListAdapter.addItem(value);
+            }
+
+            if (needSync) {
+                UpdateSheetsu.checkUpdate();
             }
 
             if (waitingDialog.isShowing()) {
