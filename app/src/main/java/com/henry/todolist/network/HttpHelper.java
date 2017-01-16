@@ -16,6 +16,8 @@
 
 package com.henry.todolist.network;
 
+import android.util.Log;
+
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.henry.todolist.sheetsu.SheetsuModel;
@@ -31,7 +33,7 @@ import java.net.URL;
 import java.util.Collection;
 
 public class HttpHelper {
-    private static final String LOG_TAG = "HttpHelper";
+    private static final String LOG_TAG = "[ToDo] HttpHelper";
 
     static private String convertStreamToString(InputStream is) {
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
@@ -55,6 +57,8 @@ public class HttpHelper {
         InputStream is = null;
         Collection<SheetsuModel> models = null;
 
+        Log.d(LOG_TAG, "Start to loadJSON");
+
         try {
             connection = (HttpURLConnection) new URL(url).openConnection();
             connection.setConnectTimeout(5000);
@@ -64,7 +68,6 @@ public class HttpHelper {
             Gson gson = new Gson();
             Type collectionType = new TypeToken<Collection<SheetsuModel>>(){}.getType();
             models = gson.fromJson(convertStreamToString(is), collectionType);
-            //Log.d(LOG_TAG, gson.toString());
         } catch (IOException ioe) {
             ioe.printStackTrace();
         } finally {

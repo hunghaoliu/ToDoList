@@ -12,6 +12,7 @@ import android.widget.TextView;
 import com.henry.todolist.R;
 import com.henry.todolist.database.TaskModel;
 import com.henry.todolist.sheetsu.SheetsuModel;
+import com.henry.todolist.util.Constants;
 
 import org.w3c.dom.Text;
 
@@ -31,6 +32,9 @@ public class ListAdapter extends BaseAdapter {
     }
 
     public void addItem(TaskModel item) {
+        if (item.getIsLocal() == Constants.SHEETSU_SYNC_NEED_DELETE)
+            return;
+
         for (TaskModel task : mList) {
            if (task.getUuid().equals(item.getUuid())) {
                return;

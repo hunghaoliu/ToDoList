@@ -27,7 +27,7 @@ import java.util.Calendar;
 import java.util.UUID;
 
 public class ModifyTaskActivity extends AppCompatActivity implements View.OnClickListener{
-    private static final String LOG_TAG = "ModifyTaskActivity";
+    private static final String LOG_TAG = "[ToDo] ModifyTaskActivity";
 
     private EditText mEditDate;
     private EditText mEditContent;
@@ -91,6 +91,7 @@ public class ModifyTaskActivity extends AppCompatActivity implements View.OnClic
                             Log.w(LOG_TAG, "Edit task failed" + e);
                         }
 
+                        // Send result to MainActivity
                         Intent intent = new Intent();
                         Bundle retBundle = new Bundle();
                         retBundle.putString(TaskContract.TaskEntry.COL_TASK_UUID, mUuid);

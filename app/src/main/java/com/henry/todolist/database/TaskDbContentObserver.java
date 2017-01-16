@@ -29,7 +29,7 @@ import java.util.HashMap;
  * Created by henry on 17/1/15.
  */
 public class TaskDbContentObserver extends ContentObserver {
-    private static final String LOG_TAG = "TaskDbContentObserver";
+    private static final String LOG_TAG = "[ToDo] TaskDbContentObserver";
     private Context mContext;
 
     public TaskDbContentObserver(Handler handler, Context context) {

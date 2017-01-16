@@ -4,4 +4,9 @@
     <string name="title_activity_add_task">Add a Task</string>
     <string name="title_activity_edit_task">Edit a Task</string>
     <string name="no_empty_task_content">Task content is empty</string>
+    <string name="please_wait">Sync with sheetsu, please wait...</string>
+    <string-array name="menu">
+        <item>Edit</item>
+        <item>Delete</item>
+    </string-array>
 </resources>

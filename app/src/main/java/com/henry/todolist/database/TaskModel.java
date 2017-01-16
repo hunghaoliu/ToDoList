@@ -7,7 +7,7 @@ public class TaskModel {
     private String datetime;
     private String tasks;
     private boolean isFinish;
-    private int isLocal;  // 0: sheetsu synced, 1: need to update sheetsu, 2: need to insert sheetsu
+    private int isLocal;  // 0: sheetsu synced, 1: need to update sheetsu, 2: need to insert sheetsu, 3: need to delete from sheetsu
     private String uuid;
 
     public TaskModel(String datetime, String tasks, boolean isFinish, int isLocal, String uuid) {
@@ -51,7 +51,8 @@ public class TaskModel {
      */
     public void setTasks(String tasks) {
         this.tasks = tasks;
-    }    /**
+    }
+    /**
      *
      * @return
      *     The isFinish

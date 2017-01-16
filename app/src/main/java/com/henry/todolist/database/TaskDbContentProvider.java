@@ -13,7 +13,7 @@ import android.util.Log;
  * Created by henry on 17/1/15.
  */
 public class TaskDbContentProvider extends ContentProvider {
-    private static final String LOG_TAG = "TaskDbContentProvider";
+    private static final String LOG_TAG = "[ToDo] TaskDbContentProvider";
     public static final String AUTHORITY = "com.henry.todolist.provider";
     private static final UriMatcher sUriMatcher;
     private static final int URI_TYPE_TABLE = 1;

@@ -16,7 +16,7 @@ import java.util.HashMap;
  * Created by henry on 17/1/15.
  */
 public class DBUtils {
-    private static final String LOG_TAG = "DBUtils";
+    private static final String LOG_TAG = "[ToDo] DBUtils";
 
     public static HashMap<String, TaskModel> loadTasksFromDB(Context context) {
         HashMap<String, TaskModel> taskMap = new HashMap<>();

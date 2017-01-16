@@ -1,5 +1,6 @@
 package com.henry.todolist;
 
+import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -12,7 +13,9 @@ import android.os.Handler;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.text.TextUtils;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -25,6 +28,7 @@ import com.henry.todolist.database.TaskDbContentObserver;
 import com.henry.todolist.database.TaskDbContentProvider;
 import com.henry.todolist.database.TaskModel;
 import com.henry.todolist.network.HttpHelper;
+import com.henry.todolist.network.UpdateSheetsu;
 import com.henry.todolist.sheetsu.SheetsuModel;
 import com.henry.todolist.ui.ModifyTaskActivity;
 import com.henry.todolist.util.Constants;
@@ -35,7 +39,7 @@ import java.util.Collection;
 import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String LOG_TAG = "MainActivity";
+    private static final String LOG_TAG = "[ToDo] MainActivity";
     private ListView mTaskListView;
     private ListAdapter mListAdapter;
     private TaskDbContentObserver taskObserver;
@@ -79,7 +83,7 @@ public class MainActivity extends AppCompatActivity {
                     if (updateValues != null) {
                         TaskModel updateTask = (TaskModel) mListAdapter.getItem(i);
                         updateValues.put(TaskContract.TaskEntry.COL_TASK_FINISHED, updateTask.getIsFinish());
-                        updateValues.put(TaskContract.TaskEntry.COL_TASK_LOCAL, updateTask.getIsLocal() == 2? 2 : 1); // The record is not insert to sheetsu yet
+                        updateValues.put(TaskContract.TaskEntry.COL_TASK_LOCAL, updateTask.getIsLocal() == Constants.SHEETSU_SYNC_NEED_INHSERT? Constants.SHEETSU_SYNC_NEED_INHSERT : Constants.SHEETSU_SYNC_NEED_UPDATE); // The record is not insert to sheetsu yet
 
                         String where = TaskContract.TaskEntry.COL_TASK_UUID + "=?";
                         String[] whereArgs = new String[] { updateTask.getUuid() };
@@ -95,25 +99,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        mTaskListView.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
-
-            @Override
-            public boolean onItemLongClick(AdapterView<?> adapterView, View view, int i, long l) {
-                // edit task
-                Intent intent = new Intent(MainActivity.this, ModifyTaskActivity.class);
-                TaskModel editTask = (TaskModel) mListAdapter.getItem(i);
-                Bundle bundle = new Bundle();
-                bundle.putString(TaskContract.TaskEntry.COL_TASK_UUID, editTask.getUuid());
-                bundle.putString(TaskContract.TaskEntry.COL_TASK_DATE, editTask.getDatetime());
-                bundle.putString(TaskContract.TaskEntry.COL_TASK_TITLE, editTask.getTasks());
-                bundle.putBoolean(TaskContract.TaskEntry.COL_TASK_FINISHED, editTask.getIsFinish());
-                bundle.putInt(TaskContract.TaskEntry.COL_TASK_LOCAL, editTask.getIsLocal());
-                intent.putExtras(bundle);
-                startActivityForResult(intent, REQUEST_CODE);
-
-                return true;
-            }
-        });
+        registerForContextMenu(mTaskListView);
 
         taskObserver = new TaskDbContentObserver(new Handler(), this);
         Uri uri = Uri.parse("content://" + TaskDbContentProvider.AUTHORITY + "/" + TaskContract.TaskEntry.TABLE);
@@ -140,6 +126,67 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v,
+                                    ContextMenu.ContextMenuInfo menuInfo) {
+        if (v.getId() == R.id.list_todo) {
+            AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)menuInfo;
+            TaskModel thisItem = (TaskModel) mListAdapter.getItem(info.position);
+            menu.setHeaderTitle(thisItem.getTasks());
+            String[] menuItems = getResources().getStringArray(R.array.menu);
+            for (int i = 0; i<menuItems.length; i++) {
+                menu.add(Menu.NONE, i, i, menuItems[i]);
+            }
+        }
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
+        int menuItemIndex = item.getItemId();
+
+        if (menuItemIndex == 0) {
+            // Edit a task
+            Intent intent = new Intent(MainActivity.this, ModifyTaskActivity.class);
+            TaskModel editTask = (TaskModel) mListAdapter.getItem(info.position);
+            Bundle bundle = new Bundle();
+            bundle.putString(TaskContract.TaskEntry.COL_TASK_UUID, editTask.getUuid());
+            bundle.putString(TaskContract.TaskEntry.COL_TASK_DATE, editTask.getDatetime());
+            bundle.putString(TaskContract.TaskEntry.COL_TASK_TITLE, editTask.getTasks());
+            bundle.putBoolean(TaskContract.TaskEntry.COL_TASK_FINISHED, editTask.getIsFinish());
+            bundle.putInt(TaskContract.TaskEntry.COL_TASK_LOCAL, editTask.getIsLocal());
+            intent.putExtras(bundle);
+            startActivityForResult(intent, REQUEST_CODE);
+        } else {
+            // Delete a task
+            ContentResolver resolver = getContentResolver();
+            if (resolver == null) {
+                Log.w(LOG_TAG, "Cannot get ContentResolver");
+                return true;
+            }
+
+            Uri uri = Uri.parse("content://" + TaskDbContentProvider.AUTHORITY + "/" + TaskContract.TaskEntry.TABLE);
+
+            TaskModel deleteTask = (TaskModel) mListAdapter.getItem(info.position);
+            try {
+                ContentValues cv = new ContentValues();
+                cv.put(TaskContract.TaskEntry.COL_TASK_LOCAL, Constants.SHEETSU_SYNC_NEED_DELETE); // The record is not insert to sheetsu yet
+                Log.d(LOG_TAG, "Delete a task with uuid " + deleteTask.getUuid());
+
+                String where = TaskContract.TaskEntry.COL_TASK_UUID + "=?";
+                String[] whereArgs = new String[] { deleteTask.getUuid() };
+                resolver.update(uri, cv, where, whereArgs);
+
+                mListAdapter.deleteItem(deleteTask.getUuid());
+            } catch (Exception e) {
+                Log.w(LOG_TAG, "Edit task failed" + e);
+            }
+        }
+
+
+        return true;
     }
 
     @Override
@@ -170,17 +217,32 @@ public class MainActivity extends AppCompatActivity {
     public class BackgroundDownloadTask extends AsyncTask<String, Void, ArrayList<SheetsuModel>> {
         ArrayList<SheetsuModel> todoItems = new ArrayList<>();
         protected Context mContext;
+        private ProgressDialog waitingDialog;
 
         public BackgroundDownloadTask(Context mContext) {
             this.mContext = mContext;
         }
 
         @Override
+        protected void onPreExecute() {
+
+            waitingDialog = new ProgressDialog(mContext);
+            waitingDialog.setMessage(mContext.getResources().getString(R.string.please_wait));
+            waitingDialog.show();
+
+        }
+
+
+        @Override
         protected ArrayList<SheetsuModel> doInBackground(String... url) {
             Collection<SheetsuModel> model = HttpHelper.loadJSON(url[0]);
-            todoItems = new ArrayList<>(model);
-            if (todoItems.size() > 0) {
-                Log.d(LOG_TAG, todoItems.get(0).getDatetime());
+            if (model != null) {
+                todoItems = new ArrayList<>(model);
+                if (todoItems != null && todoItems.size() > 0) {
+                    Log.d(LOG_TAG, todoItems.get(0).getDatetime());
+                }
+            } else {
+                Log.w(LOG_TAG, "loadJSON return null");
             }
 
             return todoItems;
@@ -190,11 +252,18 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(ArrayList<SheetsuModel> items) {
 
             HashMap<String, TaskModel> taskMap = DBUtils.loadTasksFromDB(mContext);
+            boolean needSync = false;
+
+            if (items == null)
+                return;
 
             // Compare task list from server with local db
             for (int i = 0; i < items.size(); i++) {
                 SheetsuModel thisItem = items.get(i);
                 if (thisItem == null)
+                    continue;
+
+                if (TextUtils.isEmpty(thisItem.getUuid()))
                     continue;
 
                 if (!taskMap.containsKey(thisItem.getUuid())) {
@@ -228,16 +297,24 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     // check local db is updated then sheetsu one
                     TaskModel localTask = taskMap.get(thisItem.getUuid());
-                    if (localTask.getIsLocal() != 0) {
+                    if (localTask.getIsLocal() != Constants.SHEETSU_SYNC_ALREADY) {
                         // local is updated, need to sync to sheetsu
-
+                        needSync = true;
                     }
                 }
+            }
+
+            if (needSync) {
+                UpdateSheetsu.checkUpdate(mContext);
             }
 
             // Add to adapter
             for (TaskModel value : taskMap.values()) {
                 mListAdapter.addItem(value);
+            }
+
+            if (waitingDialog.isShowing()) {
+                waitingDialog.dismiss();
             }
         }
     }
