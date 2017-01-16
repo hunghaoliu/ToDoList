@@ -5,22 +5,29 @@
 
     <TextView
         android:id="@+id/item_date"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="fill_parent"
         android:layout_gravity="start|center_vertical"
+        android:layout_weight="1"
+        android:textSize="20sp"
         android:layout_marginLeft="10dip"/>
 
     <TextView
         android:id="@+id/item_task"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="fill_parent"
-        android:layout_gravity="start|center_vertical"
+        android:layout_gravity="center|center_vertical"
+        android:layout_weight="1"
+        android:textSize="20sp"
         android:layout_marginLeft="10dip"/>
 
     <ImageView
         android:id="@+id/item_image"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="fill_parent"
-        android:layout_marginLeft="10dip"/>
+        android:layout_gravity="end|center_vertical"
+        android:layout_weight="1"
+        android:textSize="20sp"
+        android:layout_marginRight="10dip"/>
 
 </LinearLayout>
